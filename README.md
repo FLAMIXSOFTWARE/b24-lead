@@ -1,3 +1,7 @@
+![Screenshot](img/header.jpg)
+
+Site - https://flamix.solutions/bitrix24/lead_add.php
+
 ## Install
 
 ```php
@@ -8,11 +12,8 @@ composer require flamix/b24-lead
 
 ```php
 try {
-    \Flamix\Conversions\Conversion::getInstance()->setCode('YOR_CODE')->setDomain('example.com')->addFromCookie();
-    //OR
-    \Flamix\Conversions\Conversion::getInstance()->setCode('YOR_CODE')->setDomain('example.com')->add('UID', 150, 'RUB');
-} catch (Exception $e) {
-    //Handle ERROR
-    $e->getMessage();
-}
+        \Flamix\Bitrix24\Lead::getInstance()->setDomain('YOUR.BITRIX24.COM')->setToken('YOUR.API.KEY')->send(['field' => 'value']);
+    } catch (\Exception $e) {
+        $e->getMessage();
+    }
 ```
