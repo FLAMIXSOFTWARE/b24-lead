@@ -1,5 +1,3 @@
-![Screenshot](img/header.jpg)
-
 ## Install
 
 ```php

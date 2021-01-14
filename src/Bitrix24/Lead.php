@@ -31,7 +31,7 @@ class Lead
     /**
      * Set your API code
      *
-     * @param string $code
+     * @param string $token
      * @return mixed
      */
     public static function setToken(string $token)
@@ -52,7 +52,14 @@ class Lead
         return self::$instances;
     }
 
-    public static function send(array $data = [], string $actions = 'lead/add')
+    /**
+     * Prepare DATA (UTM+AUTH+UF_CRM_FX_CONVERSION)
+     *
+     * @param array $data
+     * @return array
+     * @throws \Exception
+     */
+    public static function prepareData(array $data = [])
     {
         if(empty(self::$domain))
             throw new \Exception('Empty DOMAIN!');
@@ -73,12 +80,31 @@ class Lead
         if(empty($data['UTM']) && version_compare(PHP_VERSION, '7.2.0') >= 0)
             $data['UTM'] = \UtmCookie\UtmCookie::get();
 
+        return $data;
+    }
+
+    /**
+     * @param array $data
+     * @param string $actions
+     * @return mixed
+     * @throws \Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public static function send(array $data = [], string $actions = 'lead/add')
+    {
+        $data = self::prepareData($data);
+
         $http = new Http(['base_uri' => self::$url]);
         $res = $http->request('POST', $actions, ['query' => $data]);
 
         //DEBUG
         //var_dump($res->getBody()->getContents());
 
-        return $res->getStatusCode();
+        $json = json_decode($res->getBody(), 1);
+
+        if(json_last_error())
+            throw new \Exception('Bad JSON format');
+
+        return $json;
     }
 }
