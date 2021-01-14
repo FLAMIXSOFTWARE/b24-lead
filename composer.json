@@ -10,9 +10,11 @@
         }
     ],
     "require": {
-        "guzzlehttp/guzzle": ">=6",
         "php": ">=7.0",
-        "ext-json": "*"
+        "ext-json": "*",
+        "xsuchy09/utm-cookie": "2.0.2",
+        "flamix/conversions": "dev-master",
+        "guzzlehttp/guzzle": ">=6"
     },
     "autoload":{
         "psr-4":{
