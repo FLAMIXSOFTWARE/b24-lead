@@ -12,6 +12,7 @@ composer require flamix/b24-lead
 
 ```php
 try {
+        //If need change APP use changeSubDomain('wpapp') method
         \Flamix\Bitrix24\Lead::getInstance()->setDomain('YOUR.BITRIX24.COM')->setToken('YOUR.API.KEY')->send(['field' => 'value']);
     } catch (\Exception $e) {
         $e->getMessage();

@@ -7,9 +7,11 @@ use \GuzzleHttp\Client as Http;
 class Lead
 {
     private static $instances;
-    private static $url = 'https://lead.app.flamix.solutions/api/v1/';
+    private static $url = '.app.flamix.solutions/api/';
     private static $token;
     private static $domain;
+    private static $subdomain = 'lead';
+    private static $version = 'v1';
 
 
     protected function __construct() {}
@@ -50,6 +52,28 @@ class Lead
     {
         self::$domain = $domain;
         return self::$instances;
+    }
+
+    /**
+     * Change SubDomain if we have APP on unother portal
+     *
+     * @param string $subdomain
+     * @return mixed
+     */
+    public static function changeSubDomain(string $subdomain)
+    {
+        self::$subdomain = $subdomain;
+        return self::$instances;
+    }
+
+    /**
+     * Create and return URL
+     *
+     * @return string
+     */
+    public static function getURL()
+    {
+        return 'https://' . self::$subdomain . self::$url . self::$version . '/';
     }
 
     /**
@@ -94,7 +118,7 @@ class Lead
     {
         $data = self::prepareData($data);
 
-        $http = new Http(['base_uri' => self::$url]);
+        $http = new Http(['base_uri' => self::getURL()]);
         $res = $http->request('POST', $actions, ['query' => $data]);
 
         //DEBUG
