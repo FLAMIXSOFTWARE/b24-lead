@@ -25,7 +25,7 @@ This SDK can works with many all our "Website Integration". For default its work
 
 ```php
 try {
-    //If need change APP use changeSubDomain('wpapp') method
+    //If need change APP use changeSubDomain() method
     \Flamix\Bitrix24\Lead::getInstance()->changeSubDomain('leadframework')->setDomain('YOUR.BITRIX24.COM')->setToken('YOUR.API.KEY')->send(['field' => 'value']);
 } catch (\Exception $e) {
     $e->getMessage();
