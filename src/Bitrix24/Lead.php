@@ -119,7 +119,7 @@ class Lead
         $data = self::prepareData($data);
 
         $http = new Http(['base_uri' => self::getURL()]);
-        $res = $http->request('POST', $actions, ['query' => $data]);
+        $res = $http->request('POST', $actions, ['form_params' => $data]);
 
         //DEBUG
         //var_dump($res->getBody()->getContents());
