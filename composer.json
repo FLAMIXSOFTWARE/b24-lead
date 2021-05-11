@@ -15,7 +15,7 @@
         "xsuchy09/utm-cookie": "2.0.2",
         "flamix/conversions": "dev-master",
         "guzzlehttp/guzzle": ">=6",
-        "hisorange/browser-detect": "dev-stable"
+        "hisorange/browser-detect": "4.3.0"
     },
     "autoload":{
         "psr-4":{
