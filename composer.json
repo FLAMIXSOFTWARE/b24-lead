@@ -14,7 +14,8 @@
         "ext-json": "*",
         "xsuchy09/utm-cookie": "2.0.2",
         "flamix/conversions": "dev-master",
-        "guzzlehttp/guzzle": ">=6"
+        "guzzlehttp/guzzle": ">=6",
+        "hisorange/browser-detect": "dev-stable"
     },
     "autoload":{
         "psr-4":{

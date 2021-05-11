@@ -104,6 +104,10 @@ class Lead
         if(empty($data['UTM']) && version_compare(PHP_VERSION, '7.2.0') >= 0)
             $data['UTM'] = \UtmCookie\UtmCookie::get();
 
+        //TRACE
+        if(empty($data['TRACE']))
+            $data['TRACE'] = Trace::get(true);
+
         return $data;
     }
 
