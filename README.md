@@ -39,7 +39,7 @@ try {
 * leadopencart - Integration with a store on OpenCart
 * leadframework - Integration with frameworks: Laravel, Symfony, Zend and Yii
 * leadbitrix - Integration with a store on Bitrix
-* leadwoocomerce - Integration with a store on WooCommerce
+* leadwoocommerce - Integration with a store on WooCommerce
 * leadmagento - Integration with a store on Magento
 * leadshopify - Integration with a store on Shopify
 
@@ -50,4 +50,18 @@ Put this code in header sections in every page.
 
 ```php
 \Flamix\Bitrix24\SmartUTM::init();
+```
+
+## Trace
+
+Trace save visited pages and user devise.
+
+```php
+\Flamix\Bitrix24\Trace::setPage('Your page title');
+```
+
+## Trace & SmartUTM
+
+```php
+\Flamix\Bitrix24\Trace::init('Your page title');
 ```

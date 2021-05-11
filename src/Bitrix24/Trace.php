@@ -2,8 +2,6 @@
 
 namespace Flamix\Bitrix24;
 
-use Browser;
-
 /**
  * Trace for Bitrix24
  *
@@ -12,6 +10,12 @@ use Browser;
  */
 class Trace
 {
+    public static function init($pageName = false, $url = false)
+    {
+        SmartUTM::init();
+        self::setPage($pageName, $url);
+    }
+
     /**
      * Set visited pages
      *
@@ -76,7 +80,9 @@ class Trace
         $trace = [];
         $trace['url'] = self::getCurrentURL();
 
-        $trace['device'] = ['isMobile' => Browser::isMobile()];
+        //Devise
+        $detect = new \Mobile_Detect;
+        $trace['device'] = ['isMobile' => $detect->isMobile()];
 
         $trace['tags'] = ['ts' => time()];
 
