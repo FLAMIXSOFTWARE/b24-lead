@@ -23,11 +23,11 @@ class Trace
      * @param bool $url
      */
     public static function setPage($pageName = false, $url = false) {
+        if(!$pageName)
+            return false;
+
         if (session_status() === PHP_SESSION_NONE)
             session_start();
-
-        if(!$pageName)
-            $pageName = 'Page';
 
         if(!$url)
             $url = self::getCurrentURL();
@@ -55,7 +55,7 @@ class Trace
             session_start();
 
         if(!empty($_SESSION['FLAMIX_PAGES']))
-            return $_SESSION['FLAMIX_PAGES'];
+            return array_reverse($_SESSION['FLAMIX_PAGES']);
 
         return false;
     }
