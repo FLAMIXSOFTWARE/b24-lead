@@ -147,7 +147,6 @@ class Lead
     public static function send(array $data = [], string $actions = 'lead/add')
     {
         $data = self::prepareData($data);
-        var_dump($data);
 
         $http = new Http(['base_uri' => self::getURL()]);
         $res = $http->request('POST', $actions, ['form_params' => $data]);
