@@ -76,6 +76,36 @@ class Lead
         return 'https://' . self::$subdomain . self::$url . self::$version . '/';
     }
 
+    private static function prepareAnalyticsData(&$data)
+    {
+        if(empty($data['UF_CRM_FX_CONVERSION']))
+            $data['UF_CRM_FX_CONVERSION'] = \Flamix\Conversions\Conversion::getPreparedUID();
+
+        //Add UTM if PHP is good
+        if(empty($data['UTM']) && version_compare(PHP_VERSION, '7.2.0') >= 0)
+            $data['UTM'] = \UtmCookie\UtmCookie::get();
+
+        //TRACE
+        if(empty($data['TRACE']))
+            $data['TRACE'] = Trace::get(true);
+
+        //HOSTNAME
+        if(empty($data['FIELDS']['HOSTNAME']) && !empty(SmartUTM::getMyHostname()))
+            $data['FIELDS']['HOSTNAME'] = SmartUTM::getMyHostname();
+
+        //REFERER
+        if(empty($data['FIELDS']['REFERER']) && !empty(SmartUTM::getReferer()))
+            $data['FIELDS']['REFERER'] = SmartUTM::getReferer();
+
+        //USER IP
+        if(empty($data['FIELDS']['USER_IP']) && !empty(SmartUTM::getMyIP()))
+            $data['FIELDS']['USER_IP'] = SmartUTM::getMyIP();
+
+        //ROISTAT_VISIT_ID
+        if(empty($data['FIELDS']['ROISTAT_VISIT_ID']) && !empty(SmartUTM::getRoistatID()))
+            $data['FIELDS']['ROISTAT_VISIT_ID'] = SmartUTM::getRoistatID();
+    }
+
     /**
      * Prepare DATA (UTM+AUTH+UF_CRM_FX_CONVERSION)
      *
@@ -91,22 +121,18 @@ class Lead
         if(empty(self::$token))
             throw new \Exception('Empty api_token!');
 
+        /**
+         * Dummy protection
+         */
+        if(!empty($data) && !isset($data['FIELDS']) && !isset($data['status']))
+            $data['FIELDS'] = $data;
+
         $data = array_merge($data, [
             'DOMAIN' => self::$domain,
             'api_token' => self::$token,
         ]);
 
-        //Add user UID
-        if(empty($data['UF_CRM_FX_CONVERSION']))
-            $data['UF_CRM_FX_CONVERSION'] = \Flamix\Conversions\Conversion::getPreparedUID();
-
-        //Add UTM if PHP is good
-        if(empty($data['UTM']) && version_compare(PHP_VERSION, '7.2.0') >= 0)
-            $data['UTM'] = \UtmCookie\UtmCookie::get();
-
-        //TRACE
-        if(empty($data['TRACE']))
-            $data['TRACE'] = Trace::get(true);
+        self::prepareAnalyticsData($data);
 
         return $data;
     }
@@ -121,6 +147,7 @@ class Lead
     public static function send(array $data = [], string $actions = 'lead/add')
     {
         $data = self::prepareData($data);
+        var_dump($data);
 
         $http = new Http(['base_uri' => self::getURL()]);
         $res = $http->request('POST', $actions, ['form_params' => $data]);
