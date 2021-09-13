@@ -57,6 +57,16 @@ class SmartUTM
     }
 
     /**
+     * ROISTAT - Russian analytic system
+     *
+     * @return string
+     */
+    public static function getRoistatID()
+    {
+        return isset($_COOKIE['roistat_visit']) ? $_COOKIE['roistat_visit'] : '';
+    }
+
+    /**
      * Get referer and remove www.
      *
      * @return bool|string
