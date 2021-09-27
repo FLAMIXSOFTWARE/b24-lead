@@ -1,6 +1,6 @@
 ![Screenshot](img/header.jpg)
 
-Site - https://flamix.solutions/bitrix24/lead_add.php
+Site - https://flamix.solutions/bitrix24/integrations/site/
 
 ## Install
 
@@ -13,7 +13,7 @@ composer require flamix/b24-lead
 ```php
 try {
     //If need change APP use changeSubDomain('wpapp') method
-    \Flamix\Bitrix24\Lead::getInstance()->setDomain('YOUR.BITRIX24.COM')->setToken('YOUR.API.KEY')->send(['field' => 'value']);
+    \Flamix\Bitrix24\Lead::getInstance()->setDomain('YOUR.BITRIX24.COM')->setToken('YOUR.API.KEY')->send(['FIEDS' => ['name' => 'Roman']]);
 } catch (\Exception $e) {
     $e->getMessage();
 }
@@ -26,7 +26,7 @@ This SDK can works with many all our "Website Integration". For default its work
 ```php
 try {
     //If need change APP use changeSubDomain() method
-    \Flamix\Bitrix24\Lead::getInstance()->changeSubDomain('leadframework')->setDomain('YOUR.BITRIX24.COM')->setToken('YOUR.API.KEY')->send(['field' => 'value']);
+    \Flamix\Bitrix24\Lead::getInstance()->changeSubDomain('leadframework')->setDomain('YOUR.BITRIX24.COM')->setToken('YOUR.API.KEY')->send(['FIEDS' => ['name' => 'Roman']]);
 } catch (\Exception $e) {
     $e->getMessage();
 }
