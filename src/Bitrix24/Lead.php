@@ -21,7 +21,6 @@ class Lead
         throw new \Exception("Cannot unserialize a singleton.");
     }
 
-
     public static function getInstance(): Lead
     {
         if( empty(self::$instances) )
@@ -55,6 +54,18 @@ class Lead
     }
 
     /**
+     * Set extra fields to Lead
+     *
+     * @param array $fields
+     * @return mixed
+     */
+    public static function setExtraFields(array $fields)
+    {
+        self::$extra_fields = $fields;
+        return self::$instances;
+    }
+
+    /**
      * Change SubDomain if we have APP on unother portal
      *
      * @param string $subdomain
@@ -76,6 +87,11 @@ class Lead
         return 'https://' . self::$subdomain . self::$url . self::$version . '/';
     }
 
+    /**
+     * Prepare base analytics data
+     *
+     * @param $data
+     */
     private static function prepareAnalyticsData(&$data)
     {
         if(empty($data['UF_CRM_FX_CONVERSION']))
@@ -121,12 +137,6 @@ class Lead
         if(empty(self::$token))
             throw new \Exception('Empty api_token!');
 
-        /**
-         * Dummy protection
-         */
-        if(!empty($data) && !isset($data['FIELDS']) && !isset($data['status']))
-            $data['FIELDS'] = $data;
-
         $data = array_merge($data, [
             'DOMAIN' => self::$domain,
             'api_token' => self::$token,
@@ -142,7 +152,6 @@ class Lead
      * @param string $actions
      * @return mixed
      * @throws \Exception
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public static function send(array $data = [], string $actions = 'lead/add')
     {
