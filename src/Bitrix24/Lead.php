@@ -157,7 +157,7 @@ class Lead
     {
         $data = self::prepareData($data);
 
-        $http = new Http(['base_uri' => self::getURL()]);
+        $http = new Http(['base_uri' => self::getURL(), 'verify' => false]);
         $res = $http->request('POST', $actions, ['form_params' => $data]);
 
         //DEBUG
