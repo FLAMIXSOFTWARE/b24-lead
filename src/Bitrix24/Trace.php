@@ -26,7 +26,7 @@ class Trace
         if(!$pageName)
             return false;
 
-        if (session_status() === PHP_SESSION_NONE)
+        if(session_status() === PHP_SESSION_NONE)
             session_start();
 
         if(!$url)
@@ -51,9 +51,6 @@ class Trace
      */
     public static function getPages()
     {
-        if (session_status() === PHP_SESSION_NONE)
-            session_start();
-
         if(!empty($_SESSION['FLAMIX_PAGES']))
             return array_reverse($_SESSION['FLAMIX_PAGES']);
 
