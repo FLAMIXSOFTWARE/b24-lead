@@ -12,6 +12,7 @@ class Lead
     private static $domain;
     private static $subdomain = 'lead';
     private static $version = 'v1';
+    private static $send_prepared_anal_data = true;
 
 
     protected function __construct() {}
@@ -74,6 +75,28 @@ class Lead
     public static function changeSubDomain(string $subdomain)
     {
         self::$subdomain = $subdomain;
+        return self::$instances;
+    }
+
+    /**
+     * Disable auto get trace, host, IP etc
+     *
+     * @return mixed
+     */
+    public static function disableAutoAnalytics()
+    {
+        self::$send_prepared_anal_data = false;
+        return self::$instances;
+    }
+
+    /**
+     * Enable auto get trace, host, IP etc
+     *
+     * @return mixed
+     */
+    public static function enableAutoAnalytics()
+    {
+        self::$send_prepared_anal_data = true;
         return self::$instances;
     }
 
@@ -142,7 +165,8 @@ class Lead
             'api_token' => self::$token,
         ]);
 
-        self::prepareAnalyticsData($data);
+        if(self::$send_prepared_anal_data)
+            self::prepareAnalyticsData($data);
 
         return $data;
     }
