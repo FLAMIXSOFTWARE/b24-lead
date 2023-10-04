@@ -1,7 +1,7 @@
 {
     "name": "flamix/b24-lead",
     "description": "B24 Lead SDK",
-    "homepage": "https://lead.app.flamix.solutions",
+    "homepage": "https://flamix.solutions",
     "authors": [
         {
             "name": "Roman Shkabko",
@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "php": ">=7.2",
+        "php": ">=7.4",
         "ext-json": "*",
         "xsuchy09/utm-cookie": "2.0.2",
         "flamix/conversions": "v0.2",
