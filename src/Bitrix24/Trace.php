@@ -10,7 +10,14 @@ namespace Flamix\Bitrix24;
  */
 class Trace
 {
-    public static function init($pageName = false, $url = false)
+    /**
+     * Start trace.
+     *
+     * @param string|null $pageName
+     * @param string|null $url
+     * @return void
+     */
+    public static function init(?string $pageName = null, ?string $url = null)
     {
         // Init SmartUTM.
         SmartUTM::init();
@@ -24,14 +31,15 @@ class Trace
     }
 
     /**
-     * Set visited pages
+     * Set visited pages.
      *
-     * @param bool $pageName
-     * @param bool $url
+     * @param string|null $pageName
+     * @param string|null $url
+     * @return false|void
      */
-    public static function setPage($pageName = false, $url = false)
+    public static function setPage(?string $pageName = null, ?string $url = null)
     {
-        if (!$pageName)return false;
+        if (!$pageName) return false;
 
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -40,8 +48,9 @@ class Trace
         $url = $url ?: self::getCurrentURL();
         $time = time();
 
-        if (!isset($_SESSION['FLAMIX_PAGES']))
+        if (!isset($_SESSION['FLAMIX_PAGES'])) {
             $_SESSION['FLAMIX_PAGES'] = [];
+        }
 
         $_SESSION['FLAMIX_PAGES'][$time] = [$url, $time, $pageName];
     }
@@ -53,14 +62,15 @@ class Trace
      */
     public static function getPages()
     {
-        if (!empty($_SESSION['FLAMIX_PAGES']))
+        if (!empty($_SESSION['FLAMIX_PAGES'])) {
             return array_reverse($_SESSION['FLAMIX_PAGES']);
+        }
 
         return false;
     }
 
     /**
-     * Получить текущий URL
+     * Current URL.
      *
      * @return string
      */
@@ -76,13 +86,13 @@ class Trace
      */
     public static function getBase(): array
     {
-        $trace = ['url' => self::getCurrentURL()];
-
-        // Devise
-        $detect = new \Mobile_Detect;
-        $trace['device'] = ['isMobile' => $detect->isMobile()];
-
-        $trace['tags'] = ['ts' => time()];
+        $trace = [
+            'url' => self::getCurrentURL(),
+            'device' => [
+                'isMobile' => static::isMobile(),
+            ],
+            'tags' => ['ts' => time()],
+        ];
 
         // UTM
         $utm = \UtmCookie\UtmCookie::get();
@@ -152,5 +162,15 @@ class Trace
     {
         preg_match("/(?:GA\d\.\d\.|)(\d+\.\d+)/", $cid, $matches);
         return $matches[1] ?? null;
+    }
+
+    /**
+     * Check is mobile device.
+     *
+     * @return bool
+     */
+    private static function isMobile(): bool
+    {
+        return preg_match('/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i', $_SERVER['HTTP_USER_AGENT'] ?? '');
     }
 }
