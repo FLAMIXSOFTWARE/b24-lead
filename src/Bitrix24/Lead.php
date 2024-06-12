@@ -4,7 +4,6 @@ namespace Flamix\Bitrix24;
 
 use Flamix\Conversions\Conversion;
 use UtmCookie\UtmCookie;
-use GuzzleHttp\Client as Http;
 use Exception;
 
 class Lead
@@ -61,7 +60,7 @@ class Lead
     /**
      * Set your API code.
      *
-     * @param string $token
+     * @param  string  $token
      * @return self
      */
     public static function setToken(string $token): self
@@ -73,7 +72,7 @@ class Lead
     /**
      * Set your DOMAIN (for auth).
      *
-     * @param string $domain
+     * @param  string  $domain
      * @return self
      */
     public static function setDomain(string $domain): self
@@ -85,7 +84,7 @@ class Lead
     /**
      * Set extra fields to Lead.
      *
-     * @param array $fields
+     * @param  array  $fields
      * @return self
      */
     public static function setExtraFields(array $fields): self
@@ -97,7 +96,7 @@ class Lead
     /**
      * Change SubDomain if we have APP on another portal.
      *
-     * @param string $subdomain
+     * @param  string  $subdomain
      * @return self
      */
     public static function changeSubDomain(string $subdomain): self
@@ -135,7 +134,7 @@ class Lead
      */
     public static function getURL(): string
     {
-        return 'https://' . self::$subdomain . self::$url . self::$version . '/';
+        return 'https://'.self::$subdomain.self::$url.self::$version.'/';
     }
 
     /**
@@ -183,7 +182,7 @@ class Lead
     /**
      * Prepare DATA (UTM+AUTH+UF_CRM_FX_CONVERSION)
      *
-     * @param array $data
+     * @param  array  $data
      * @return array
      * @throws Exception
      */
@@ -210,27 +209,51 @@ class Lead
     }
 
     /**
-     * @param array $data
-     * @param string $actions
+     * @param  array  $data
+     * @param  string  $actions
      * @return mixed
      * @throws Exception
      */
     public static function send(array $data = [], string $actions = 'lead/add')
     {
         $data = self::prepareData($data);
-
-        $http = new Http(['base_uri' => self::getURL(), 'verify' => false]);
-        $res = $http->request('POST', $actions, ['form_params' => $data]);
+        $res = self::post(self::getURL().$actions, $data);
 
         //DEBUG
-        //var_dump($res->getBody()->getContents());
+        //var_dump($res);
 
-        $json = json_decode($res->getBody(), 1);
+        $json = json_decode($res, 1);
 
         if (json_last_error()) {
             throw new Exception('Bad JSON format!');
         }
 
         return $json;
+    }
+
+    /**
+     * Send POST request.
+     *
+     * @param  string  $url
+     * @param  array  $data
+     * @return string|null
+     * @throws Exception
+     */
+    public static function post(string $url, array $data = []): ?string
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $output = curl_exec($ch);
+
+        if ($output === false) {
+            throw new Exception('Curl error: '.curl_error($ch));
+        }
+
+        curl_close($ch);
+        return $output;
     }
 }

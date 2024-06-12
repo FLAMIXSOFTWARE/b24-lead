@@ -14,8 +14,7 @@
         "ext-json": "*",
         "ext-curl": "*",
         "xsuchy09/utm-cookie": "2.0.2",
-        "flamix/conversions": "^1",
-        "guzzlehttp/guzzle": ">=6"
+        "flamix/conversions": "^1"
     },
     "autoload":{
         "psr-4":{
