@@ -1,6 +1,7 @@
 ![Screenshot](img/header.jpg)
 
 Site - https://flamix.solutions/bitrix24/integrations/site/
+Docs with API and examples - https://lead.app.flamix.solutions/docs
 
 ## Install
 
@@ -13,7 +14,7 @@ composer require flamix/b24-lead
 ```php
 try {
     //If need change APP use changeSubDomain('wpapp') method
-    \Flamix\Bitrix24\Lead::getInstance()->setDomain('YOUR.BITRIX24.COM')->setToken('YOUR.API.KEY')->send(['FIELDS' => ['name' => 'Roman']]);
+    \Flamix\Bitrix24\Lead::getInstance()->auth('YOUR.BITRIX24.COM', 'YOUR.API.KEY')->send(['FIELDS' => ['name' => 'Roman']]);
 } catch (\Exception $e) {
     $e->getMessage();
 }
@@ -26,7 +27,7 @@ This SDK can works with many all our "Website Integration". For default its work
 ```php
 try {
     //If need change APP use changeSubDomain() method
-    \Flamix\Bitrix24\Lead::getInstance()->changeSubDomain('leadframework')->setDomain('YOUR.BITRIX24.COM')->setToken('YOUR.API.KEY')->send(['FIELDS' => ['name' => 'Roman']]);
+    \Flamix\Bitrix24\Lead::getInstance()->changeSubDomain('leadframework')->auth('YOUR.BITRIX24.COM', 'YOUR.API.KEY')->send(['FIELDS' => ['name' => 'Roman']]);
 } catch (\Exception $e) {
     $e->getMessage();
 }
@@ -35,13 +36,7 @@ try {
 #### Module domains:
 
 * lead - Website Integration (Default);
-* leadwp - Integration with WordPress site
-* leadopencart - Integration with a store on OpenCart
 * leadframework - Integration with frameworks: Laravel, Symfony, Zend and Yii
-* leadbitrix - Integration with a store on Bitrix
-* leadwoocommerce - Integration with a store on WooCommerce
-* leadmagento - Integration with a store on Magento
-* leadshopify - Integration with a store on Shopify
 
 ## SmartUTM
 
