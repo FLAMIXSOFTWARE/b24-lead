@@ -4,7 +4,7 @@ namespace Flamix\Bitrix24;
 
 use Flamix\Conversions\Conversion;
 use UtmCookie\UtmCookie;
-use Exception;
+use Exception, Throwable;
 
 class Lead
 {
@@ -48,11 +48,11 @@ class Lead
     {
         try {
             if (session_status() === PHP_SESSION_NONE) {
-                session_start();
+                @session_start(); // Some times it's generated warning!
             }
 
             return true;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             return false;
         }
     }
