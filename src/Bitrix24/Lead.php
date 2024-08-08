@@ -58,15 +58,16 @@ class Lead
     }
 
     /**
-     * Set your API code.
+     * Set auth.
      *
+     * @param  string  $domain
      * @param  string  $token
      * @return self
      */
-    public static function setToken(string $token): self
+    public static function auth(string $domain, string $token): self
     {
-        self::$token = $token;
-        return self::$instances;
+        self::setDomain($domain);
+        return self::setToken($token);
     }
 
     /**
@@ -78,6 +79,18 @@ class Lead
     public static function setDomain(string $domain): self
     {
         self::$domain = $domain;
+        return self::$instances;
+    }
+
+    /**
+     * Set your API code.
+     *
+     * @param  string  $token
+     * @return self
+     */
+    public static function setToken(string $token): self
+    {
+        self::$token = $token;
         return self::$instances;
     }
 
