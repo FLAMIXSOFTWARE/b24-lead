@@ -171,24 +171,39 @@ class Lead
             $data['TRACE'] = Trace::get(true);
         }
 
-        //HOSTNAME
+        // HOSTNAME
         if (empty($data['FIELDS']['HOSTNAME']) && !empty(SmartUTM::getMyHostname())) {
             $data['FIELDS']['HOSTNAME'] = SmartUTM::getMyHostname();
         }
 
-        //REFERER
+        // REFERER
         if (empty($data['FIELDS']['REFERER']) && !empty(SmartUTM::getReferer())) {
             $data['FIELDS']['REFERER'] = SmartUTM::getReferer();
         }
 
-        //USER IP
+        // USER IP
         if (empty($data['FIELDS']['USER_IP']) && !empty(SmartUTM::getMyIP())) {
             $data['FIELDS']['USER_IP'] = SmartUTM::getMyIP();
         }
 
-        //ROISTAT_VISIT_ID
+        // Google
+        if (empty($data['FIELDS']['GA_UID']) && !empty($_COOKIE['_ga'] ?? null)) {
+            $data['FIELDS']['GA_UID'] = $_COOKIE['_ga'];
+        }
+
+        // Facebook
+        if (empty($data['FIELDS']['FB_UID']) && !empty($_COOKIE['_fbp'] ?? null)) {
+            $data['FIELDS']['FB_UID'] = $_COOKIE['_fbp'];
+        }
+
+        // Roistat
         if (empty($data['FIELDS']['ROISTAT_VISIT_ID']) && !empty(SmartUTM::getRoistatID())) {
             $data['FIELDS']['ROISTAT_VISIT_ID'] = SmartUTM::getRoistatID();
+        }
+
+        // Yandex
+        if (empty($data['FIELDS']['YM_UID']) && !empty($_COOKIE['_ym_uid'] ?? null)) {
+            $data['FIELDS']['YM_UID'] = $_COOKIE['_ym_uid'];
         }
     }
 
