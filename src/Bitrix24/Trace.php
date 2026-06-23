@@ -27,6 +27,11 @@ class Trace
             self::setGCLID($_GET['gclid']);
         }
 
+        // Save TTCLID (TikTok click id) from URL.
+        if (isset($_GET['ttclid'])) {
+            self::setTTCLID($_GET['ttclid']);
+        }
+
         self::setPage($pageName, $url);
     }
 
@@ -103,6 +108,7 @@ class Trace
 
         $trace['client']['gaId'] = !empty($client['_ga']) ? self::parseClientID($client['_ga']) : null;
         $trace['client']['yaId'] = !empty($client['_ym_uid']) ? $client['_ym_uid'] : null;
+        $trace['client']['ttId'] = !empty($_COOKIE['_ttp']) ? $_COOKIE['_ttp'] : null;
 
         return $trace;
     }
@@ -150,6 +156,17 @@ class Trace
     public static function setGCLID(string $gclid): bool
     {
         return setcookie('gclid', $gclid, time() + 604800, '/');
+    }
+
+    /**
+     * Save TTCLID (TikTok Click ID) to cookie for 7 days.
+     *
+     * @param string $ttclid
+     * @return bool
+     */
+    public static function setTTCLID(string $ttclid): bool
+    {
+        return setcookie('ttclid', $ttclid, time() + 604800, '/');
     }
 
     /**

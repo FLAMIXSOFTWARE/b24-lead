@@ -193,6 +193,11 @@ class Lead
         if (empty($data['FIELDS']['YM_UID']) && !empty($_COOKIE['_ym_uid'] ?? null)) {
             $data['FIELDS']['YM_UID'] = $_COOKIE['_ym_uid'];
         }
+
+        // TikTok
+        if (empty($data['FIELDS']['TT_UID']) && !empty($_COOKIE['_ttp'] ?? null)) {
+            $data['FIELDS']['TT_UID'] = $_COOKIE['_ttp'];
+        }
     }
 
     /**
