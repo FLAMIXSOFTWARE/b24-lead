@@ -2,33 +2,101 @@
 
 namespace Flamix\Bitrix24;
 
+use Exception;
 use Flamix\Conversions\Conversion;
+use Throwable;
 use UtmCookie\UtmCookie;
-use Exception, Throwable;
 
+/**
+ * Lead SDK for the Flamix Bitrix24 integrations.
+ *
+ * Builds a lead payload (auth + analytics) and sends it to the Flamix Lead
+ * service, which forwards it to the connected Bitrix24 portal.
+ *
+ * @see https://lead.app.flamix.solutions/docs
+ */
 class Lead
 {
+    /**
+     * The shared singleton instance.
+     *
+     * @var self|null
+     */
     private static ?self $instances = null;
+
+    /**
+     * The base URL suffix of the Lead service.
+     *
+     * @var string
+     */
     private static string $url = '.app.flamix.solutions/api/';
+
+    /**
+     * The API token used to authenticate requests.
+     *
+     * @var string|null
+     */
     private static ?string $token = null;
+
+    /**
+     * The Bitrix24 domain (used for auth).
+     *
+     * @var string|null
+     */
     private static ?string $domain = null;
+
+    /**
+     * The service subdomain (which APP to talk to).
+     *
+     * @var string
+     */
     private static string $subdomain = 'lead';
+
+    /**
+     * The API version.
+     *
+     * @var string
+     */
     private static string $version = 'v1';
+
+    /**
+     * Whether to auto-collect trace, host, IP and analytics data.
+     *
+     * @var bool
+     */
     private static bool $send_prepared_anal_data = true;
 
-    protected function __construct()
-    {
-    }
+    /**
+     * Prevent direct construction — use getInstance() instead.
+     *
+     * @return void
+     */
+    protected function __construct() {}
 
-    protected function __clone()
-    {
-    }
+    /**
+     * Prevent cloning of the singleton.
+     *
+     * @return void
+     */
+    protected function __clone() {}
 
+    /**
+     * Prevent unserialization of the singleton.
+     *
+     * @return void
+     *
+     * @throws \Exception
+     */
     public function __wakeup()
     {
         throw new Exception("Cannot unserialize a singleton.");
     }
 
+    /**
+     * Get the shared singleton instance.
+     *
+     * @return self
+     */
     public static function getInstance(): self
     {
         if (empty(self::$instances)) {
@@ -36,6 +104,7 @@ class Lead
         }
 
         self::session();
+
         return self::$instances;
     }
 
@@ -58,7 +127,7 @@ class Lead
     }
 
     /**
-     * Set auth.
+     * Set auth (domain + token).
      *
      * @param  string  $domain
      * @param  string  $token
@@ -67,6 +136,7 @@ class Lead
     public static function auth(string $domain, string $token): self
     {
         self::setDomain($domain);
+
         return self::setToken($token);
     }
 
@@ -79,11 +149,12 @@ class Lead
     public static function setDomain(string $domain): self
     {
         self::$domain = $domain;
+
         return self::$instances;
     }
 
     /**
-     * Set your API code.
+     * Set your API token.
      *
      * @param  string  $token
      * @return self
@@ -91,6 +162,7 @@ class Lead
     public static function setToken(string $token): self
     {
         self::$token = $token;
+
         return self::$instances;
     }
 
@@ -103,6 +175,7 @@ class Lead
     public static function changeSubDomain(string $subdomain): self
     {
         self::$subdomain = $subdomain;
+
         return self::$instances;
     }
 
@@ -114,6 +187,7 @@ class Lead
     public static function disableAutoAnalytics(): self
     {
         self::$send_prepared_anal_data = false;
+
         return self::$instances;
     }
 
@@ -125,87 +199,90 @@ class Lead
     public static function enableAutoAnalytics(): self
     {
         self::$send_prepared_anal_data = true;
+
         return self::$instances;
     }
 
     /**
-     * Create and return URL
+     * Create and return the request URL.
      *
      * @return string
      */
     public static function getURL(): string
     {
-        return 'https://'.self::$subdomain.self::$url.self::$version.'/';
+        return 'https://' . self::$subdomain . self::$url . self::$version . '/';
     }
 
     /**
-     * Prepare base analytics data
+     * Prepare base analytics data.
      *
-     * @param $data
+     * @param  array  $data
+     * @return void
      */
-    private static function prepareAnalyticsData(&$data)
+    private static function prepareAnalyticsData(array &$data): void
     {
         if (empty($data['UF_CRM_FX_CONVERSION'])) {
             $data['UF_CRM_FX_CONVERSION'] = Conversion::getPreparedUID();
         }
 
-        // Add UTM if PHP is good
+        // Add UTM if PHP is good.
         if (empty($data['UTM']) && version_compare(PHP_VERSION, '7.2.0') >= 0) {
             $data['UTM'] = UtmCookie::get();
         }
 
-        // TRACE
+        // Trace.
         if (empty($data['TRACE'])) {
             $data['TRACE'] = Trace::get(true);
         }
 
-        // HOSTNAME
-        if (empty($data['FIELDS']['HOSTNAME']) && !empty(SmartUTM::getMyHostname())) {
+        // Hostname.
+        if (empty($data['FIELDS']['HOSTNAME']) && ! empty(SmartUTM::getMyHostname())) {
             $data['FIELDS']['HOSTNAME'] = SmartUTM::getMyHostname();
         }
 
-        // REFERER
-        if (empty($data['FIELDS']['REFERER']) && !empty(SmartUTM::getReferer())) {
+        // Referer.
+        if (empty($data['FIELDS']['REFERER']) && ! empty(SmartUTM::getReferer())) {
             $data['FIELDS']['REFERER'] = SmartUTM::getReferer();
         }
 
-        // USER IP
-        if (empty($data['FIELDS']['USER_IP']) && !empty(SmartUTM::getMyIP())) {
+        // User IP.
+        if (empty($data['FIELDS']['USER_IP']) && ! empty(SmartUTM::getMyIP())) {
             $data['FIELDS']['USER_IP'] = SmartUTM::getMyIP();
         }
 
-        // Google
-        if (empty($data['FIELDS']['GA_UID']) && !empty($_COOKIE['_ga'] ?? null)) {
+        // Google.
+        if (empty($data['FIELDS']['GA_UID']) && ! empty($_COOKIE['_ga'] ?? null)) {
             $data['FIELDS']['GA_UID'] = $_COOKIE['_ga'];
         }
 
-        // Facebook
-        if (empty($data['FIELDS']['FB_UID']) && !empty($_COOKIE['_fbp'] ?? null)) {
+        // Facebook.
+        if (empty($data['FIELDS']['FB_UID']) && ! empty($_COOKIE['_fbp'] ?? null)) {
             $data['FIELDS']['FB_UID'] = $_COOKIE['_fbp'];
         }
 
-        // Roistat
-        if (empty($data['FIELDS']['ROISTAT_VISIT_ID']) && !empty(SmartUTM::getRoistatID())) {
+        // Roistat.
+        if (empty($data['FIELDS']['ROISTAT_VISIT_ID']) && ! empty(SmartUTM::getRoistatID())) {
             $data['FIELDS']['ROISTAT_VISIT_ID'] = SmartUTM::getRoistatID();
         }
 
-        // Yandex
-        if (empty($data['FIELDS']['YM_UID']) && !empty($_COOKIE['_ym_uid'] ?? null)) {
+        // Yandex.
+        if (empty($data['FIELDS']['YM_UID']) && ! empty($_COOKIE['_ym_uid'] ?? null)) {
             $data['FIELDS']['YM_UID'] = $_COOKIE['_ym_uid'];
         }
 
-        // TikTok
-        if (empty($data['FIELDS']['TT_UID']) && !empty($_COOKIE['_ttp'] ?? null)) {
+        // TikTok.
+        if (empty($data['FIELDS']['TT_UID']) && ! empty($_COOKIE['_ttp'] ?? null)) {
             $data['FIELDS']['TT_UID'] = $_COOKIE['_ttp'];
         }
     }
 
     /**
-     * Prepare DATA (UTM+AUTH+UF_CRM_FX_CONVERSION)
+     * Prepare DATA (UTM + AUTH + UF_CRM_FX_CONVERSION).
      *
      * @param  array  $data
      * @return array
-     * @throws Exception
+     *
+     * @throws \Exception
      */
     public static function prepareData(array $data = []): array
     {
@@ -230,15 +307,18 @@ class Lead
     }
 
     /**
+     * Prepare and send a lead to the service.
+     *
      * @param  array  $data
      * @param  string  $actions
      * @return mixed
-     * @throws Exception
+     *
+     * @throws \Exception
      */
     public static function send(array $data = [], string $actions = 'lead/add')
     {
         $data = self::prepareData($data);
-        $res = self::post(self::getURL().$actions, $data);
+        $res = self::post(self::getURL() . $actions, $data);
 
         $json = json_decode($res, 1);
 
@@ -255,7 +335,8 @@ class Lead
      * @param  string  $url
      * @param  array  $data
      * @return string|null
-     * @throws Exception
+     *
+     * @throws \Exception
      */
     public static function post(string $url, array $data = []): ?string
     {
@@ -271,10 +352,11 @@ class Lead
         $output = curl_exec($ch);
 
         if ($output === false) {
-            throw new Exception('Curl error: '.curl_error($ch));
+            throw new Exception('Curl error: ' . curl_error($ch));
         }
 
         curl_close($ch);
+
         return $output;
     }
 }

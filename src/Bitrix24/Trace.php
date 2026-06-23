@@ -2,22 +2,27 @@
 
 namespace Flamix\Bitrix24;
 
+use Flamix\Conversions\Conversion;
+use UtmCookie\UtmCookie;
+
 /**
- * Trace for Bitrix24
+ * Trace for Bitrix24.
  *
- * Class Trace
- * @package Flamix\Bitrix24
+ * Collects visited pages, device and client identifiers so the visitor
+ * journey can be reconstructed on the Bitrix24 side.
+ *
+ * @see https://lead.app.flamix.solutions/docs
  */
 class Trace
 {
     /**
      * Start trace.
      *
-     * @param string|null $pageName
-     * @param string|null $url
+     * @param  string|null  $pageName
+     * @param  string|null  $url
      * @return void
      */
-    public static function init(?string $pageName = null, ?string $url = null)
+    public static function init(?string $pageName = null, ?string $url = null): void
     {
         // Init SmartUTM.
         SmartUTM::init();
@@ -38,13 +43,15 @@ class Trace
     /**
      * Set visited pages.
      *
-     * @param string|null $pageName
-     * @param string|null $url
+     * @param  string|null  $pageName
+     * @param  string|null  $url
      * @return false|void
      */
     public static function setPage(?string $pageName = null, ?string $url = null)
     {
-        if (!$pageName) return false;
+        if (! $pageName) {
+            return false;
+        }
 
         if (session_status() === PHP_SESSION_NONE) {
             @session_start(); // Some times it's generated warning!
@@ -53,7 +60,7 @@ class Trace
         $url = $url ?: self::getCurrentURL();
         $time = time();
 
-        if (!isset($_SESSION['FLAMIX_PAGES'])) {
+        if (! isset($_SESSION['FLAMIX_PAGES'])) {
             $_SESSION['FLAMIX_PAGES'] = [];
         }
 
@@ -61,13 +68,13 @@ class Trace
     }
 
     /**
-     * Get all visited pages
+     * Get all visited pages.
      *
-     * @return bool|array
+     * @return array|bool
      */
     public static function getPages()
     {
-        if (!empty($_SESSION['FLAMIX_PAGES'])) {
+        if (! empty($_SESSION['FLAMIX_PAGES'])) {
             return array_reverse($_SESSION['FLAMIX_PAGES']);
         }
 
@@ -75,17 +82,19 @@ class Trace
     }
 
     /**
-     * Current URL.
+     * Get the current URL.
      *
      * @return string
      */
     public static function getCurrentURL(): string
     {
-        return (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+        $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+
+        return $scheme . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
     }
 
     /**
-     * Get base params. Device, UTM, Client to Bitrix24 Tracer.
+     * Get base params: device, UTM and client for the Bitrix24 tracer.
      *
      * @return array
      */
@@ -99,33 +108,37 @@ class Trace
             'tags' => ['ts' => time()],
         ];
 
-        // UTM
-        $utm = \UtmCookie\UtmCookie::get();
-        $trace['tags']['list'] = !empty($utm) ? $utm : null;
+        // UTM.
+        $utm = UtmCookie::get();
+        $trace['tags']['list'] = ! empty($utm) ? $utm : null;
 
-        //client
-        $client = \Flamix\Conversions\Conversion::getFromCookie();
+        // Client.
+        $client = Conversion::getFromCookie();
 
-        $trace['client']['gaId'] = !empty($client['_ga']) ? self::parseClientID($client['_ga']) : null;
-        $trace['client']['yaId'] = !empty($client['_ym_uid']) ? $client['_ym_uid'] : null;
-        $trace['client']['ttId'] = !empty($_COOKIE['_ttp']) ? $_COOKIE['_ttp'] : null;
+        $trace['client']['gaId'] = ! empty($client['_ga']) ? self::parseClientID($client['_ga']) : null;
+        $trace['client']['yaId'] = ! empty($client['_ym_uid']) ? $client['_ym_uid'] : null;
+        $trace['client']['ttId'] = ! empty($_COOKIE['_ttp']) ? $_COOKIE['_ttp'] : null;
 
         return $trace;
     }
 
     /**
-     * Get full result, witch we can send to Bitrix24.
+     * Get the full result, which we can send to Bitrix24.
      *
-     * @param bool $json
+     * @param  bool  $json
      * @return array|bool|string
      */
-    public static function get($json = false)
+    public static function get(bool $json = false)
     {
         $pages = self::getPages();
-        if (!$pages) return false;
+        if (! $pages) {
+            return false;
+        }
 
         $base = self::getBase();
-        if (empty($base)) return false;
+        if (empty($base)) {
+            return false;
+        }
 
         $base['pages'] = ['list' => $pages];
 
@@ -141,6 +154,8 @@ class Trace
 
     /**
      * Get GID from cookie.
+     *
+     * @return string|null
      */
     public static function getGID(): ?string
     {
@@ -148,9 +163,9 @@ class Trace
     }
 
     /**
-     * Save GCLID to cookie for 7 days.
+     * Save GCLID (Google Ads click id) to cookie for 7 days.
      *
-     * @param string $gclid
+     * @param  string  $gclid
      * @return bool
      */
     public static function setGCLID(string $gclid): bool
@@ -159,9 +174,9 @@ class Trace
     }
 
     /**
-     * Save TTCLID (TikTok Click ID) to cookie for 7 days.
+     * Save TTCLID (TikTok click id) to cookie for 7 days.
      *
-     * @param string $ttclid
+     * @param  string  $ttclid
      * @return bool
      */
     public static function setTTCLID(string $ttclid): bool
@@ -170,24 +185,25 @@ class Trace
     }
 
     /**
-     * Return pure Client ID from.
+     * Return the pure Client ID.
      *
-     * @param string $cid
+     * @param  string  $cid
      * @return string|null
      */
     private static function parseClientID(string $cid): ?string
     {
         preg_match("/(?:GA\d\.\d\.|)(\d+\.\d+)/", $cid, $matches);
+
         return $matches[1] ?? null;
     }
 
     /**
-     * Check is mobile device.
+     * Check if the device is mobile.
      *
      * @return bool
      */
     private static function isMobile(): bool
     {
-        return preg_match('/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i', $_SERVER['HTTP_USER_AGENT'] ?? '');
+        return (bool) preg_match('/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i', $_SERVER['HTTP_USER_AGENT'] ?? '');
     }
 }

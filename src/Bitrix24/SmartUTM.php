@@ -2,90 +2,98 @@
 
 namespace Flamix\Bitrix24;
 
+use UtmCookie\UtmCookie;
+
 /**
- * Save UTM_SOURCE from HTTP_REFERER
+ * Save UTM_SOURCE from HTTP_REFERER.
  *
- * Class SmartUTM
- * @package Flamix\Bitrix24
+ * @see https://lead.app.flamix.solutions/docs
  */
 class SmartUTM
 {
     /**
-     * Init Smart UTM
+     * Init Smart UTM.
+     *
+     * @return void
      */
-    public static function init()
+    public static function init(): void
     {
         self::checkAndSave();
     }
 
     /**
-     * Get My hostname
-     * todo Check CloudFlare
+     * Get my hostname.
      *
      * @return bool|string
+     *
+     * @todo Check CloudFlare.
      */
     public static function getMyHostname()
     {
         $host = false;
-        if(!empty($_SERVER['SERVER_NAME']))
+
+        if (! empty($_SERVER['SERVER_NAME'])) {
             $host = $_SERVER['SERVER_NAME'];
+        }
 
-        //todo check CloudFlare
-
-        if($host)
+        if ($host) {
             return self::pretty($host);
-
-        return false;
-    }
-
-    /**
-     * Get User IP
-     * IP - Internet Portal :)
-     *
-     * @return bool|string
-     */
-    public static function getMyIP()
-    {
-        if(!empty($_SERVER['REMOTE_ADDR']))
-            return $_SERVER['REMOTE_ADDR'];
-
-        //CloudFlare
-        if(!empty($_SERVER['HTTP_CF_CONNECTING_IP']))
-            return $_SERVER['HTTP_CF_CONNECTING_IP'];
-
-        return false;
-    }
-
-    /**
-     * ROISTAT - Russian analytic system
-     *
-     * @return string
-     */
-    public static function getRoistatID()
-    {
-        return isset($_COOKIE['roistat_visit']) ? $_COOKIE['roistat_visit'] : '';
-    }
-
-    /**
-     * Get referer and remove www.
-     *
-     * @return bool|string
-     */
-    public static function getReferer()
-    {
-        if(!empty($_SERVER['HTTP_REFERER'])) {
-            $referer = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
-            if(!empty($referer))
-                return self::pretty($referer);
         }
 
         return false;
     }
 
     /**
-     * Remove www.
+     * Get the user IP.
      *
-     * @param string $host
+     * @return bool|string
+     */
+    public static function getMyIP()
+    {
+        if (! empty($_SERVER['REMOTE_ADDR'])) {
+            return $_SERVER['REMOTE_ADDR'];
+        }
+
+        // CloudFlare.
+        if (! empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+            return $_SERVER['HTTP_CF_CONNECTING_IP'];
+        }
+
+        return false;
+    }
+
+    /**
+     * ROISTAT - Russian analytic system.
+     *
+     * @return string
+     */
+    public static function getRoistatID(): string
+    {
+        return $_COOKIE['roistat_visit'] ?? '';
+    }
+
+    /**
+     * Get the referer host and remove www.
+     *
+     * @return bool|string
+     */
+    public static function getReferer()
+    {
+        if (! empty($_SERVER['HTTP_REFERER'])) {
+            $referer = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
+
+            if (! empty($referer)) {
+                return self::pretty($referer);
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Remove the www. prefix from a host.
+     *
+     * @param  string  $host
      * @return string
      */
     private static function pretty(string $host): string
@@ -94,34 +102,32 @@ class SmartUTM
     }
 
     /**
-     * If we already have UTM?
+     * Do we already have a UTM source?
      *
      * @return bool
      */
     private static function isWeHaveUTM(): bool
     {
-        $utm_source = \UtmCookie\UtmCookie::get('utm_source');
-        if(isset($utm_source) && $utm_source != false && $utm_source != NULL)
-            return true;
-
-        return false;
+        return ! empty(UtmCookie::get('utm_source'));
     }
 
     /**
-     * If we didn't have UTM, but have REFERER - Save REFERER to UTM
+     * If we didn't have UTM, but have REFERER - save REFERER to UTM.
      *
      * @return bool
      */
     public static function checkAndSave(): bool
     {
-        if(self::isWeHaveUTM())
+        if (self::isWeHaveUTM()) {
             return true;
+        }
 
         $referer = self::getReferer();
         $host = self::getMyHostname();
 
-        if($referer && $host && $referer !== $host) {
-            \UtmCookie\UtmCookie::save(['utm_source' => $referer]);
+        if ($referer && $host && $referer !== $host) {
+            UtmCookie::save(['utm_source' => $referer]);
+
             return true;
         }
 
