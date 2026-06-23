@@ -42,7 +42,7 @@ class Trace
         if (!$pageName) return false;
 
         if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+            @session_start(); // Some times it's generated warning!
         }
 
         $url = $url ?: self::getCurrentURL();
@@ -127,7 +127,7 @@ class Trace
         $base['pages']['gid'] = $gid ?: null;
 
         if ($json) {
-            return json_encode($base);
+            return json_encode($base, JSON_UNESCAPED_UNICODE);
         }
 
         return $base;

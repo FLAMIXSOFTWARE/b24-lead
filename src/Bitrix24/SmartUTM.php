@@ -50,7 +50,7 @@ class SmartUTM
             return $_SERVER['REMOTE_ADDR'];
 
         //CloudFlare
-        if($_SERVER['HTTP_CF_CONNECTING_IP'])
+        if(!empty($_SERVER['HTTP_CF_CONNECTING_IP']))
             return $_SERVER['HTTP_CF_CONNECTING_IP'];
 
         return false;
@@ -112,7 +112,7 @@ class SmartUTM
      *
      * @return bool
      */
-    public static function checkAndSave()
+    public static function checkAndSave(): bool
     {
         if(self::isWeHaveUTM())
             return true;
@@ -120,10 +120,11 @@ class SmartUTM
         $referer = self::getReferer();
         $host = self::getMyHostname();
 
-//        var_dump('Host:', $host);
-//        var_dump('Referer:', $referer);
-
-        if(isset($referer) && isset($host) && $referer !== $host)
+        if($referer && $host && $referer !== $host) {
             \UtmCookie\UtmCookie::save(['utm_source' => $referer]);
+            return true;
+        }
+
+        return false;
     }
 }

@@ -8,13 +8,13 @@ use Exception, Throwable;
 
 class Lead
 {
-    private static $instances;
-    private static $url = '.app.flamix.solutions/api/';
-    private static $token;
-    private static $domain;
-    private static $subdomain = 'lead';
-    private static $version = 'v1';
-    private static $send_prepared_anal_data = true;
+    private static ?self $instances = null;
+    private static string $url = '.app.flamix.solutions/api/';
+    private static ?string $token = null;
+    private static ?string $domain = null;
+    private static string $subdomain = 'lead';
+    private static string $version = 'v1';
+    private static bool $send_prepared_anal_data = true;
 
     protected function __construct()
     {
@@ -91,18 +91,6 @@ class Lead
     public static function setToken(string $token): self
     {
         self::$token = $token;
-        return self::$instances;
-    }
-
-    /**
-     * Set extra fields to Lead.
-     *
-     * @param  array  $fields
-     * @return self
-     */
-    public static function setExtraFields(array $fields): self
-    {
-        self::$extra_fields = $fields;
         return self::$instances;
     }
 
@@ -247,9 +235,6 @@ class Lead
         $data = self::prepareData($data);
         $res = self::post(self::getURL().$actions, $data);
 
-        //DEBUG
-        //var_dump($res);
-
         $json = json_decode($res, 1);
 
         if (json_last_error()) {
@@ -276,6 +261,8 @@ class Lead
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         $output = curl_exec($ch);
 
         if ($output === false) {
