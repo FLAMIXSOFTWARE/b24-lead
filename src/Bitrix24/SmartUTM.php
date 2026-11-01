@@ -4,30 +4,16 @@ namespace Flamix\Bitrix24;
 
 use UtmCookie\UtmCookie;
 
-/**
- * Save UTM_SOURCE from HTTP_REFERER.
- *
- * @see https://lead.app.flamix.solutions/docs
- */
+/** Saves the referer host as utm_source when a visit has no UTM, and reads host, IP and Roistat id for the lead. */
 class SmartUTM
 {
-    /**
-     * Init Smart UTM.
-     *
-     * @return void
-     */
+    /** Call on every page before output: it may set the utm cookie. */
     public static function init(): void
     {
         self::checkAndSave();
     }
 
-    /**
-     * Get my hostname.
-     *
-     * @return bool|string
-     *
-     * @todo Check CloudFlare.
-     */
+    /** @return false|string SERVER_NAME without www. */
     public static function getMyHostname()
     {
         $host = false;
@@ -43,18 +29,13 @@ class SmartUTM
         return false;
     }
 
-    /**
-     * Get the user IP.
-     *
-     * @return bool|string
-     */
+    /** @return false|string */
     public static function getMyIP()
     {
         if (! empty($_SERVER['REMOTE_ADDR'])) {
             return $_SERVER['REMOTE_ADDR'];
         }
 
-        // CloudFlare.
         if (! empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
             return $_SERVER['HTTP_CF_CONNECTING_IP'];
         }
@@ -62,21 +43,13 @@ class SmartUTM
         return false;
     }
 
-    /**
-     * ROISTAT - Russian analytic system.
-     *
-     * @return string
-     */
+    /** The Roistat visit id cookie, or an empty string. */
     public static function getRoistatID(): string
     {
         return $_COOKIE['roistat_visit'] ?? '';
     }
 
-    /**
-     * Get the referer host and remove www.
-     *
-     * @return bool|string
-     */
+    /** @return false|string the referer host without www. */
     public static function getReferer()
     {
         if (! empty($_SERVER['HTTP_REFERER'])) {
@@ -90,32 +63,19 @@ class SmartUTM
         return false;
     }
 
-    /**
-     * Remove the www. prefix from a host.
-     *
-     * @param  string  $host
-     * @return string
-     */
+    /** Remove www. from a host. */
     private static function pretty(string $host): string
     {
         return str_replace('www.', '', $host);
     }
 
-    /**
-     * Do we already have a UTM source?
-     *
-     * @return bool
-     */
+    /** Whether the visit already has a utm_source. */
     private static function isWeHaveUTM(): bool
     {
         return ! empty(UtmCookie::get('utm_source'));
     }
 
-    /**
-     * If we didn't have UTM, but have REFERER - save REFERER to UTM.
-     *
-     * @return bool
-     */
+    /** Save the referer host as utm_source unless a UTM exists or the referer is this site. */
     public static function checkAndSave(): bool
     {
         if (self::isWeHaveUTM()) {

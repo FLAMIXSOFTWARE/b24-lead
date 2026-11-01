@@ -5,34 +5,18 @@ namespace Flamix\Bitrix24;
 use Flamix\Conversions\Conversion;
 use UtmCookie\UtmCookie;
 
-/**
- * Trace for Bitrix24.
- *
- * Collects visited pages, device and client identifiers so the visitor
- * journey can be reconstructed on the Bitrix24 side.
- *
- * @see https://lead.app.flamix.solutions/docs
- */
+/** Collects visited pages (native session), device, UTM and analytics ids into the Bitrix24 tracer format. */
 class Trace
 {
-    /**
-     * Start trace.
-     *
-     * @param  string|null  $pageName
-     * @param  string|null  $url
-     * @return void
-     */
+    /** Call on every page before output: sets cookies. */
     public static function init(?string $pageName = null, ?string $url = null): void
     {
-        // Init SmartUTM.
         SmartUTM::init();
 
-        // Save GCLID from URL.
         if (isset($_GET['gclid'])) {
             self::setGCLID($_GET['gclid']);
         }
 
-        // Save TTCLID (TikTok click id) from URL.
         if (isset($_GET['ttclid'])) {
             self::setTTCLID($_GET['ttclid']);
         }
@@ -41,10 +25,8 @@ class Trace
     }
 
     /**
-     * Set visited pages.
+     * Record a visited page in the session; without a name nothing is recorded.
      *
-     * @param  string|null  $pageName
-     * @param  string|null  $url
      * @return false|void
      */
     public static function setPage(?string $pageName = null, ?string $url = null)
@@ -54,7 +36,8 @@ class Trace
         }
 
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start(); // Some times it's generated warning!
+            // @: warns once headers are sent, and a page must not break on it.
+            @session_start();
         }
 
         $url = $url ?: self::getCurrentURL();
@@ -67,11 +50,7 @@ class Trace
         $_SESSION['FLAMIX_PAGES'][$time] = [$url, $time, $pageName];
     }
 
-    /**
-     * Get all visited pages.
-     *
-     * @return array|bool
-     */
+    /** @return false|list<array{0: string, 1: int, 2: string}> pages as [url, timestamp, name], newest first */
     public static function getPages()
     {
         if (! empty($_SESSION['FLAMIX_PAGES'])) {
@@ -81,11 +60,6 @@ class Trace
         return false;
     }
 
-    /**
-     * Get the current URL.
-     *
-     * @return string
-     */
     public static function getCurrentURL(): string
     {
         $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
@@ -93,11 +67,7 @@ class Trace
         return $scheme . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
     }
 
-    /**
-     * Get base params: device, UTM and client for the Bitrix24 tracer.
-     *
-     * @return array
-     */
+    /** The tracer base: url, device, UTM tags and client ids. */
     public static function getBase(): array
     {
         $trace = [
@@ -108,11 +78,9 @@ class Trace
             'tags' => ['ts' => time()],
         ];
 
-        // UTM.
         $utm = UtmCookie::get();
         $trace['tags']['list'] = ! empty($utm) ? $utm : null;
 
-        // Client.
         $client = Conversion::getFromCookie();
 
         $trace['client']['gaId'] = ! empty($client['_ga']) ? self::parseClientID($client['_ga']) : null;
@@ -122,12 +90,7 @@ class Trace
         return $trace;
     }
 
-    /**
-     * Get the full result, which we can send to Bitrix24.
-     *
-     * @param  bool  $json
-     * @return array|bool|string
-     */
+    /** @return false|array|string the tracer data (JSON when $json), false when no page was recorded */
     public static function get(bool $json = false)
     {
         $pages = self::getPages();
@@ -152,44 +115,25 @@ class Trace
         return $base;
     }
 
-    /**
-     * Get GID from cookie.
-     *
-     * @return string|null
-     */
+    /** The Bitrix24 guest id cookie. */
     public static function getGID(): ?string
     {
         return $_COOKIE['b24_crm_guest_id'] ?? null;
     }
 
-    /**
-     * Save GCLID (Google Ads click id) to cookie for 7 days.
-     *
-     * @param  string  $gclid
-     * @return bool
-     */
+    /** Save the Google Ads click id to a 7-day cookie. */
     public static function setGCLID(string $gclid): bool
     {
         return setcookie('gclid', $gclid, time() + 604800, '/');
     }
 
-    /**
-     * Save TTCLID (TikTok click id) to cookie for 7 days.
-     *
-     * @param  string  $ttclid
-     * @return bool
-     */
+    /** Save the TikTok click id to a 7-day cookie. */
     public static function setTTCLID(string $ttclid): bool
     {
         return setcookie('ttclid', $ttclid, time() + 604800, '/');
     }
 
-    /**
-     * Return the pure Client ID.
-     *
-     * @param  string  $cid
-     * @return string|null
-     */
+    /** The client id from a _ga cookie: GA1.1.123.456 gives 123.456. */
     private static function parseClientID(string $cid): ?string
     {
         preg_match("/(?:GA\d\.\d\.|)(\d+\.\d+)/", $cid, $matches);
@@ -197,11 +141,6 @@ class Trace
         return $matches[1] ?? null;
     }
 
-    /**
-     * Check if the device is mobile.
-     *
-     * @return bool
-     */
     private static function isMobile(): bool
     {
         return (bool) preg_match('/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i', $_SERVER['HTTP_USER_AGENT'] ?? '');

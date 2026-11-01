@@ -1,0 +1,57 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - php: '7.4'
+            phpunit: '^9.6'
+          - php: '8.3'
+            phpunit: '*'
+
+    name: PHP ${{ matrix.php }}
+
+    steps:
+      # Into its own folder, required by path: a PR tests the PR, not master.
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          path: package
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, json
+          tools: composer:v2
+
+      # Public deps only: no auth needed.
+      - name: Install dependencies
+        run: |
+          mkdir app && cd app
+          composer init --no-interaction --name=ci/app --stability=dev
+          composer config prefer-stable true
+          composer config repositories.package '{"type": "path", "url": "${{ github.workspace }}/package", "options": {"symlink": true}}'
+          composer require --no-interaction flamix/b24-lead:@dev
+          composer require --no-interaction --dev "phpunit/phpunit:${{ matrix.phpunit }}"
+
+      # Symlinked package: ../../autoload.php from phpunit.xml resolves inside package/, hence --bootstrap.
+      - name: Run tests
+        working-directory: app
+        run: >
+          ./vendor/bin/phpunit ./vendor/flamix/b24-lead/tests
+          --configuration ./vendor/flamix/b24-lead/phpunit.xml
+          --bootstrap ./vendor/autoload.php
+          --testdox

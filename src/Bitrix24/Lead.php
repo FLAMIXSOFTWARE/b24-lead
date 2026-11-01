@@ -7,96 +7,34 @@ use Flamix\Conversions\Conversion;
 use Throwable;
 use UtmCookie\UtmCookie;
 
-/**
- * Lead SDK for the Flamix Bitrix24 integrations.
- *
- * Builds a lead payload (auth + analytics) and sends it to the Flamix Lead
- * service, which forwards it to the connected Bitrix24 portal.
- *
- * @see https://lead.app.flamix.solutions/docs
- */
+/** Static client that posts a lead (auth + visitor analytics) to a Flamix Lead app, which forwards it to Bitrix24. */
 class Lead
 {
-    /**
-     * The shared singleton instance.
-     *
-     * @var self|null
-     */
     private static ?self $instances = null;
 
-    /**
-     * The base URL suffix of the Lead service.
-     *
-     * @var string
-     */
     private static string $url = '.app.flamix.solutions/api/';
 
-    /**
-     * The API token used to authenticate requests.
-     *
-     * @var string|null
-     */
     private static ?string $token = null;
 
-    /**
-     * The Bitrix24 domain (used for auth).
-     *
-     * @var string|null
-     */
     private static ?string $domain = null;
 
-    /**
-     * The service subdomain (which APP to talk to).
-     *
-     * @var string
-     */
     private static string $subdomain = 'lead';
 
-    /**
-     * The API version.
-     *
-     * @var string
-     */
     private static string $version = 'v1';
 
-    /**
-     * Whether to auto-collect trace, host, IP and analytics data.
-     *
-     * @var bool
-     */
     private static bool $send_prepared_anal_data = true;
 
-    /**
-     * Prevent direct construction — use getInstance() instead.
-     *
-     * @return void
-     */
     protected function __construct() {}
 
-    /**
-     * Prevent cloning of the singleton.
-     *
-     * @return void
-     */
     protected function __clone() {}
 
-    /**
-     * Prevent unserialization of the singleton.
-     *
-     * @return void
-     *
-     * @throws \Exception
-     */
+    /** @throws \Exception always: the singleton is not unserializable. */
     public function __wakeup()
     {
         throw new Exception("Cannot unserialize a singleton.");
     }
 
-    /**
-     * Get the shared singleton instance.
-     *
-     * @return self
-     */
+    /** The shared instance; also starts the native PHP session. */
     public static function getInstance(): self
     {
         if (empty(self::$instances)) {
@@ -108,16 +46,13 @@ class Lead
         return self::$instances;
     }
 
-    /**
-     * Ensure that the session starts. If not started - run!
-     *
-     * @return bool
-     */
+    /** Start the native PHP session if none is active. */
     private static function session(): bool
     {
         try {
             if (session_status() === PHP_SESSION_NONE) {
-                @session_start(); // Some times it's generated warning!
+                // @: warns once headers are sent, and a lead form must not break on it.
+                @session_start();
             }
 
             return true;
@@ -126,13 +61,7 @@ class Lead
         }
     }
 
-    /**
-     * Set auth (domain + token).
-     *
-     * @param  string  $domain
-     * @param  string  $token
-     * @return self
-     */
+    /** Set the Bitrix24 domain and the app token. */
     public static function auth(string $domain, string $token): self
     {
         self::setDomain($domain);
@@ -140,149 +69,104 @@ class Lead
         return self::setToken($token);
     }
 
-    /**
-     * Set your DOMAIN (for auth).
-     *
-     * @param  string  $domain
-     * @return self
-     */
+    /** Set the Bitrix24 portal domain. */
     public static function setDomain(string $domain): self
     {
         self::$domain = $domain;
 
-        return self::$instances;
+        return self::getInstance();
     }
 
-    /**
-     * Set your API token.
-     *
-     * @param  string  $token
-     * @return self
-     */
+    /** Set the app API token. */
     public static function setToken(string $token): self
     {
         self::$token = $token;
 
-        return self::$instances;
+        return self::getInstance();
     }
 
-    /**
-     * Change SubDomain if we have APP on another portal.
-     *
-     * @param  string  $subdomain
-     * @return self
-     */
+    /** Switch to another Flamix app, e.g. leadframework. */
     public static function changeSubDomain(string $subdomain): self
     {
         self::$subdomain = $subdomain;
 
-        return self::$instances;
+        return self::getInstance();
     }
 
-    /**
-     * Disable auto get trace, host, IP, etc.
-     *
-     * @return self
-     */
+    /** Stop send() adding trace, host, IP and analytics ids. */
     public static function disableAutoAnalytics(): self
     {
         self::$send_prepared_anal_data = false;
 
-        return self::$instances;
+        return self::getInstance();
     }
 
-    /**
-     * Enable auto-get trace, host, IP, etc.
-     *
-     * @return self
-     */
+    /** Make send() add trace, host, IP and analytics ids again (the default). */
     public static function enableAutoAnalytics(): self
     {
         self::$send_prepared_anal_data = true;
 
-        return self::$instances;
+        return self::getInstance();
     }
 
-    /**
-     * Create and return the request URL.
-     *
-     * @return string
-     */
+    /** The API base URL, ending with a slash. */
     public static function getURL(): string
     {
         return 'https://' . self::$subdomain . self::$url . self::$version . '/';
     }
 
-    /**
-     * Prepare base analytics data.
-     *
-     * @param  array  $data
-     * @return void
-     */
+    /** Fill every analytics key the caller left empty. */
     private static function prepareAnalyticsData(array &$data): void
     {
         if (empty($data['UF_CRM_FX_CONVERSION'])) {
             $data['UF_CRM_FX_CONVERSION'] = Conversion::getPreparedUID();
         }
 
-        // Add UTM if PHP is good.
-        if (empty($data['UTM']) && version_compare(PHP_VERSION, '7.2.0') >= 0) {
+        if (empty($data['UTM'])) {
             $data['UTM'] = UtmCookie::get();
         }
 
-        // Trace.
         if (empty($data['TRACE'])) {
             $data['TRACE'] = Trace::get(true);
         }
 
-        // Hostname.
         if (empty($data['FIELDS']['HOSTNAME']) && ! empty(SmartUTM::getMyHostname())) {
             $data['FIELDS']['HOSTNAME'] = SmartUTM::getMyHostname();
         }
 
-        // Referer.
         if (empty($data['FIELDS']['REFERER']) && ! empty(SmartUTM::getReferer())) {
             $data['FIELDS']['REFERER'] = SmartUTM::getReferer();
         }
 
-        // User IP.
         if (empty($data['FIELDS']['USER_IP']) && ! empty(SmartUTM::getMyIP())) {
             $data['FIELDS']['USER_IP'] = SmartUTM::getMyIP();
         }
 
-        // Google.
         if (empty($data['FIELDS']['GA_UID']) && ! empty($_COOKIE['_ga'] ?? null)) {
             $data['FIELDS']['GA_UID'] = $_COOKIE['_ga'];
         }
 
-        // Facebook.
         if (empty($data['FIELDS']['FB_UID']) && ! empty($_COOKIE['_fbp'] ?? null)) {
             $data['FIELDS']['FB_UID'] = $_COOKIE['_fbp'];
         }
 
-        // Roistat.
         if (empty($data['FIELDS']['ROISTAT_VISIT_ID']) && ! empty(SmartUTM::getRoistatID())) {
             $data['FIELDS']['ROISTAT_VISIT_ID'] = SmartUTM::getRoistatID();
         }
 
-        // Yandex.
         if (empty($data['FIELDS']['YM_UID']) && ! empty($_COOKIE['_ym_uid'] ?? null)) {
             $data['FIELDS']['YM_UID'] = $_COOKIE['_ym_uid'];
         }
 
-        // TikTok.
         if (empty($data['FIELDS']['TT_UID']) && ! empty($_COOKIE['_ttp'] ?? null)) {
             $data['FIELDS']['TT_UID'] = $_COOKIE['_ttp'];
         }
     }
 
     /**
-     * Prepare DATA (UTM + AUTH + UF_CRM_FX_CONVERSION).
+     * The payload send() posts: the data plus DOMAIN, api_token and, unless disabled, analytics.
      *
-     * @param  array  $data
-     * @return array
-     *
-     * @throws \Exception
+     * @throws \Exception when the domain or the token is not set
      */
     public static function prepareData(array $data = []): array
     {
@@ -307,18 +191,17 @@ class Lead
     }
 
     /**
-     * Prepare and send a lead to the service.
+     * Post the prepared data to an action of the app and return the decoded JSON.
      *
-     * @param  array  $data
-     * @param  string  $actions
      * @return mixed
      *
-     * @throws \Exception
+     * @throws \Exception on missing auth, a cURL error or a non-JSON response
      */
     public static function send(array $data = [], string $actions = 'lead/add')
     {
         $data = self::prepareData($data);
-        $res = self::post(self::getURL() . $actions, $data);
+        // static::, not self::: the tests replace post() in a subclass to stay off the network.
+        $res = static::post(self::getURL() . $actions, $data);
 
         $json = json_decode($res, 1);
 
@@ -330,13 +213,9 @@ class Lead
     }
 
     /**
-     * Send POST request.
+     * Form-encoded POST over cURL; returns the raw body.
      *
-     * @param  string  $url
-     * @param  array  $data
-     * @return string|null
-     *
-     * @throws \Exception
+     * @throws \Exception on a cURL error
      */
     public static function post(string $url, array $data = []): ?string
     {
